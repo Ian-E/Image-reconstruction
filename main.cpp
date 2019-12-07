@@ -9,7 +9,7 @@
 // #include "fft.cpp"
 
 
-#define BLOCKSIZE 20000
+#define BLOCKSIZE 50000
 
 
 
@@ -117,7 +117,7 @@ int main(int argc, char** argv){
             char binNameBuff[128];
             sprintf(binNameBuff, "bins/image_%d_%d.csv", width, headerFrequencies[index]);
             FILE* binFile = fopen(binNameBuff, "w");
-            fprintf(binFile, "%d,1,0,1", i, headerFrequencies[index], i);
+            fprintf(binFile, "fragments/%d,1,0,1", i, headerFrequencies[index], i);
             fclose(binFile);
         }
     }
@@ -151,7 +151,7 @@ int main(int argc, char** argv){
                         for(int l=0; l<headerFrequencies[k]; l++){
                             sprintf(pathName, "bins/image_%d_%d.csv", headerSizes[k], l+1); // ew, the FileSystem class should handle stuff like this
                             FILE* binFile = fopen(pathName, "a");
-                            fprintf(binFile, "\n%d,%lf,%d,%lf", i, sWidth[j]->confidence, sOffset[0]->value, sOffset[0]->confidence);
+                            fprintf(binFile, "\nfragments/%d,%lf,%d,%lf", i, sWidth[j]->confidence, sOffset[0]->value, sOffset[0]->confidence);
                             fclose(binFile);
                         }
                     }
@@ -160,7 +160,7 @@ int main(int argc, char** argv){
             
             // put the fragment in all of them
             if(!found){
-                // printf("not found: %d %d %d\n", sWidth[0]->value, sWidth[1]->value, sWidth[2]->value);
+                printf("not found: %s %d %d %d\n", pathName, sWidth[0]->value, sWidth[1]->value, sWidth[2]->value);
 
                 for(int j=0; j<headerCount; j++){
                     SuspectedValueList sOffset = img.detectOffset(headerSizes[j], 1);
@@ -168,7 +168,7 @@ int main(int argc, char** argv){
                     for(int k=0; k<headerFrequencies[j]; k++){
                         sprintf(pathName, "bins/image_%d_%d.csv", headerSizes[j], k+1); // ew, the FileSystem class should handle stuff like this
                         FILE* binFile = fopen(pathName, "a");
-                        fprintf(binFile, "\n%d,0,%d,%lf", i, sOffset[0]->value, sOffset[0]->confidence);
+                        fprintf(binFile, "\nfragments/%d,0,%d,%lf", i, sOffset[0]->value, sOffset[0]->confidence);
                         fclose(binFile);
                     }
                 }

@@ -259,25 +259,51 @@ class ImageFragment{
             // convert to magnitude
             for(int i=0; i<paddedLen; i++){ data[i] = creal(data[i])*creal(data[i]) + cimag(data[i])*cimag(data[i]); }
 
+
+            // int maxI = 0;
+            // double maxV = creal(data[0]);
+            int roughPeriod = 0;
+            for(int i=paddedLen/2-2; i>=paddedLen/2-20; i--){
+                // printf("%lf %d %lf\n", creal(data[i]), paddedLen/2-i, paddedLen/(paddedLen/2.0-i));
+
+            //     if(creal(data[i]) < creal(data[i-1])){
+            //         roughPeriod = (int)(paddedLen/(paddedLen/2-i) / (bytesPerPixel*2));
+            //         // printf("%lf < %lf\n", creal(data[i]) ,creal(data[i-1]));
+            //         break;
+            //     }
+            }
+
+            // printf("%d\n", roughPeriod);
+
             // np.fft.ifft(x)
             ifft(data, paddedLen);
 
             // keep the correlation at every multiple of 'bytesPerPixel'
             // (x.real/x.shape-np.mean(x)**2)/np.std(x)**2
-            for(int i=0; i<distsLen/bytesPerPixel; i++){ paddedDists[i] = (creal(data[i*bytesPerPixel]) / distsLen - meanSquared) / stdDevSquared; }
+            for(int i=0; i<distsLen; i+=bytesPerPixel){
+                double maxV = creal(data[i]);
+                for(int j=1; j<bytesPerPixel; j++){
+                    if(creal(data[i+j]) > maxV){
+                        maxV = creal(data[i+j]);
+                    }
+                }
+                paddedDists[i/bytesPerPixel] = (maxV / distsLen - meanSquared) / stdDevSquared;
+            }
             distsLen /= bytesPerPixel;
 
             // simple smoothing function
             // TODO: this could be removed with relatively minimal impact on results
-            for(int i=0; i<distsLen-windowSize; i++){
-                paddedDists[i] /= 2;
-                double factor = 0.5;
-                for(int j=1; j<windowSize; j++){
-                    factor /= 2;
-                    paddedDists[i] += paddedDists[i + j] * factor;
-                }
-            }
-            distsLen -= windowSize;
+            // for(int i=0; i<distsLen-windowSize; i++){
+            //     paddedDists[i] /= 2;
+            //     double factor = 0.5;
+            //     for(int j=1; j<windowSize; j++){
+            //         factor /= 2;
+            //         paddedDists[i] += paddedDists[i + j] * factor;
+            //     }
+
+            //     // g << paddedDists[i];
+            // }
+            // distsLen -= windowSize;
 
             // get the second dirivative of the auto correlation to discover concavity
             double* concavity = (double*)malloc(sizeof(double) * distsLen);
@@ -293,8 +319,7 @@ class ImageFragment{
                 paddedDists[i] *= concavity[i]>0 ? 0 : -concavity[i];
             }
 
-
-            for(int i=1; i<distsLen-windowSize*2-1; i++){
+            for(int i=roughPeriod/2; i<distsLen-windowSize*2-1; i++){
                 if(paddedDists[i] > paddedDists[i-1] && paddedDists[i] > paddedDists[i+1]){
                     bool kept = svl.process(i+windowSize-1, paddedDists[i]);
                 }
